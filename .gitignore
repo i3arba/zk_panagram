@@ -1,0 +1,12 @@
+# Foundry build artifacts
+out/
+cache/
+
+# Foundry dependencies (installed with forge install)
+lib/
+
+# Optional: VSCode settings
+.vscode/
+
+# Optional: DS_Store and OS-specific files
+.DS_Store
