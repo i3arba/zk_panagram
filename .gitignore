@@ -10,3 +10,5 @@ lib/
 
 # Optional: DS_Store and OS-specific files
 .DS_Store
+
+node_modules
