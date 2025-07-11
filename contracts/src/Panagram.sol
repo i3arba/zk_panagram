@@ -8,7 +8,7 @@ import { IVerifier } from "src/Verifier.sol";
 contract Panagram is ERC1155, Ownable {
 
     /**
-            State Variables
+                State Variables
     */
     ///@notice Immutable variable to store the Noir Verifier contract address
     IVerifier immutable i_verifier;
@@ -27,7 +27,7 @@ contract Panagram is ERC1155, Ownable {
     ///@notice storage variable to keep track of winners. It will be reset to zero every time a new round starts
     address s_roundWinner;
     ///@notice storage variable to store the round ID
-    uint256 s_currentRoundID;
+    uint256 public s_currentRoundID;
 
     /**
                 Events
@@ -88,15 +88,21 @@ contract Panagram is ERC1155, Ownable {
         if(s_roundWinner != address(0)) revert Panagram_RoundOneSolved(s_currentRoundID, s_roundWinner);
         if(_proof.length == 0) revert Panagram_theProofCantBeAnEmptyInput(_proof);
 
-        bytes32[] memory answerHash = new bytes32[](1);
-        answerHash[0] = s_expectedAnswer;
-        isCorrect_ = i_verifier.verify(_proof, answerHash);
+        bytes32[] memory publicInputs = new bytes32[](2);
+        publicInputs[0] = s_expectedAnswer;
+        publicInputs[1] = bytes32(uint256(uint160(msg.sender)));
+
+        isCorrect_ = i_verifier.verify(_proof, publicInputs);
         if(!isCorrect_) revert Panagram_IncorrectProof();
 
         s_roundWinner = msg.sender;
 
-        emit Panagram_RoundsWinnerSelected(msg.sender, s_currentRoundId);
+        emit Panagram_RoundsWinnerSelected(msg.sender, s_currentRoundID);
 
         _mint(msg.sender, ZERO, NFT_AMOUNT, "");
+    }
+
+    function getCurrentPanagram() external view returns (bytes32) {
+        return s_expectedAnswer;
     }
 }

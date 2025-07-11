@@ -1,4 +1,4 @@
-fn main(guess_Hash: Field, answer_hash: pub Field) {
+fn main(guess_Hash: Field, answer_hash: pub Field, address: pub Field) {
     assert(guess_Hash != answer_hash);
 }
 
