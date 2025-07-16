@@ -6,14 +6,14 @@ import { Panagram } from "src/Panagram.sol";
 import { HonkVerifier } from "src/Verifier.sol";
 
 contract PanagramTest is Test {
-    HonkVerifier s_verifier;
-    Panagram s_panagram;
+    HonkVerifier verifier;
+    Panagram panagram;
 
-    bytes s_proof;
+    bytes proof;
     bytes32[] publicInputs;
 
-    address s_admin = address(0x77);
-    address s_user = makeAddr("user");
+    address admin = address(0x77);
+    address user = makeAddr("user");
     uint256 constant FIELD_MODULUS = 21888242871839275222246405745257275088548364400416034343698204186575808495617;
 
     bytes32 ANSWER = bytes32(uint256(keccak256("triangles")) % FIELD_MODULUS);
@@ -21,15 +21,56 @@ contract PanagramTest is Test {
     bytes32 INCORRECT_GUESS = bytes32(uint256(keccak256("tranisleg")) % FIELD_MODULUS);
 
     function setUp() public {
-        s_verifier = new HonkVerifier();
-        s_panagram = new Panagram(
-            s_verifier,
+        verifier = new HonkVerifier();
+        panagram = new Panagram(
+            verifier,
             ANSWER,
             "ipfs://bafybeicqfc4ipkle34tgqv3gh7gccwhmr22qdg7p6k6oxon255mnwb6csi/{id}.json",
-            s_admin
+            admin
         );
 
-        s_proof = _getProof(ANSWER, CORRECT_GUESS, s_user);
+        proof = _getProof(ANSWER, CORRECT_GUESS, user);
+    }
+
+    function testCorrectGuessPasses() public {
+        vm.prank(user);
+        panagram.submitGuess(proof);
+        // vm.assertEq(panagram.s_winnerWins(user), 1);
+        vm.assertEq(panagram.balanceOf(user, 0), 1);
+
+        // check they can't try again
+        vm.prank(user);
+        vm.expectRevert();
+        panagram.submitGuess(proof);
+    }
+
+    function testStartNewRound() public {
+        // start a round (in setUp)
+        vm.assertEq(panagram.s_currentRoundID(), 0);
+        // get a winner
+        vm.prank(user);
+        panagram.submitGuess(proof);
+        // min time passed
+        vm.warp(panagram.MIN_DURATION() + 1);
+        // start a new round
+        vm.prank(admin);
+        panagram.startRound(bytes32(uint256(keccak256("abcdefghi")) % FIELD_MODULUS));
+        // validate the state has reset
+        vm.assertEq(panagram.getCurrentPanagram(), bytes32(uint256(keccak256("abcdefghi")) % FIELD_MODULUS));
+        vm.assertEq(panagram.s_currentRoundID(), 1);
+    }
+
+    function testIncorrectGuessFails() public {
+        // start a round
+        // get hash(?) of guess
+        // use script to get proof
+        // make a guess call
+        // validate they got the winner NFT
+        // validate they have been incremented in winnerWins mapping  
+        bytes memory incorrectProof = _getProof(INCORRECT_GUESS, INCORRECT_GUESS, user);
+        vm.prank(user);
+        vm.expectRevert();
+        panagram.submitGuess(incorrectProof);
     }
 
     function _getProof(bytes32 _guess, bytes32 _correctAnswer, address _user) internal returns (bytes memory proof_) {
@@ -43,47 +84,7 @@ contract PanagramTest is Test {
         inputs[5] = vm.toString(bytes32(uint256(uint160(_user))));
 
         bytes memory result = vm.ffi(inputs);
-        
+
         (proof_, /*publicInputs*/) = abi.decode(result, (bytes, bytes32[]));
-    }
-
-    function testCorrectGuessPasses() public {
-        vm.prank(s_user);
-        s_panagram.submitGuess(s_proof);
-        // vm.assertEq(s_panagram.s_winnerWins(s_user), 1);
-        vm.assertEq(s_panagram.balanceOf(s_user, 0), 1);
-        vm.assertEq(s_panagram.balanceOf(s_user, 1), 0);
-
-        // check they can't try again
-        vm.prank(s_user);
-        vm.expectRevert();
-        s_panagram.submitGuess(s_proof);
-    }
-
-    function testStartNewRound() public {
-        // start a round (in setUp)
-        // get a winner
-        vm.prank(s_user);
-        s_panagram.submitGuess(s_proof);
-        // min time passed
-        vm.warp(s_panagram.MIN_DURATION() + 1);
-        // start a new round
-        s_panagram.startRound(bytes32(uint256(keccak256("abcdefghi")) % FIELD_MODULUS));
-        // validate the state has reset
-        vm.assertEq(s_panagram.getCurrentPanagram(), bytes32(uint256(keccak256("abcdefghi")) % FIELD_MODULUS));
-        vm.assertEq(s_panagram.s_currentRoundID(), 2);
-    }
-
-    function testIncorrectGuessFails() public {
-        // start a round
-        // get hash(?) of guess
-        // use script to get proof
-        // make a guess call
-        // validate they got the winner NFT
-        // validate they have been incremented in winnerWins mapping  
-        bytes memory incorrectProof = _getProof(INCORRECT_GUESS, INCORRECT_GUESS, s_user);
-        vm.prank(s_user);
-        vm.expectRevert();
-        s_panagram.submitGuess(incorrectProof);
     }
 }

@@ -1,5 +1,5 @@
-fn main(guess_Hash: Field, answer_hash: pub Field, address: pub Field) {
-    assert(guess_Hash != answer_hash);
+fn main(guess_hash: Field, answer_hash: pub Field, address: pub Field) {
+    assert(guess_hash == answer_hash);
 }
 
 // #[test]

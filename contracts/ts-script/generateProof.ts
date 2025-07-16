@@ -40,7 +40,6 @@ export default async function generateProof(){
             ["bytes", "bytes32[]"],
             [proof, publicInputs]
         );
-
         return response;
 
     } catch(error){
