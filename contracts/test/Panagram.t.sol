@@ -16,7 +16,7 @@ contract PanagramTest is Test {
     address user = makeAddr("user");
     uint256 constant FIELD_MODULUS = 21888242871839275222246405745257275088548364400416034343698204186575808495617;
 
-    bytes32 ANSWER = bytes32(uint256(keccak256("triangles")) % FIELD_MODULUS);
+    bytes32 ANSWER = bytes32(uint256(keccak256(abi.encodePacked(bytes32(uint256(keccak256("triangles")) % FIELD_MODULUS)))) % FIELD_MODULUS);
     bytes32 CORRECT_GUESS = bytes32(uint256(keccak256("triangles")) % FIELD_MODULUS);
     bytes32 INCORRECT_GUESS = bytes32(uint256(keccak256("tranisleg")) % FIELD_MODULUS);
 
@@ -29,7 +29,7 @@ contract PanagramTest is Test {
             admin
         );
 
-        proof = _getProof(ANSWER, CORRECT_GUESS, user);
+        proof = _getProof(CORRECT_GUESS, ANSWER, user);
     }
 
     function testCorrectGuessPasses() public {
@@ -52,22 +52,22 @@ contract PanagramTest is Test {
         panagram.submitGuess(proof);
         // min time passed
         vm.warp(panagram.MIN_DURATION() + 1);
+        //Generates a new answer
+        bytes32 newAnswer = bytes32(uint256(keccak256(abi.encodePacked(bytes32(uint256(keccak256("outnumber")) % FIELD_MODULUS)))) % FIELD_MODULUS);
         // start a new round
         vm.prank(admin);
-        panagram.startRound(bytes32(uint256(keccak256("abcdefghi")) % FIELD_MODULUS));
+        panagram.startRound(newAnswer);
         // validate the state has reset
-        vm.assertEq(panagram.getCurrentPanagram(), bytes32(uint256(keccak256("abcdefghi")) % FIELD_MODULUS));
+        vm.assertEq(panagram.getCurrentPanagram(), newAnswer);
         vm.assertEq(panagram.s_currentRoundID(), 1);
     }
 
     function testIncorrectGuessFails() public {
-        // start a round
-        // get hash(?) of guess
-        // use script to get proof
-        // make a guess call
-        // validate they got the winner NFT
-        // validate they have been incremented in winnerWins mapping  
-        bytes memory incorrectProof = _getProof(INCORRECT_GUESS, INCORRECT_GUESS, user);
+        bytes32 incorrectAnswer = bytes32(uint256(keccak256(abi.encodePacked(bytes32(uint256(keccak256("suahsuahsa")) % FIELD_MODULUS)))) % FIELD_MODULUS);
+        bytes32 incorrectGuess = bytes32(uint256(keccak256("suahsuahsa")) % FIELD_MODULUS);
+
+        bytes memory incorrectProof = _getProof(incorrectGuess, incorrectAnswer, user);
+        
         vm.prank(user);
         vm.expectRevert();
         panagram.submitGuess(incorrectProof);
